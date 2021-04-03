@@ -1,22 +1,31 @@
-version: '2' 
-services: 
-    zookeeper: 
-        image: confluentinc/cp-zookeeper:latest 
-        ports: 
-            - 2181:2181 
-        environment: 
-            ZOOKEEPER_CLIENT_PORT: 2181 
-            ZOOKEEPER_TICK_TIME: 2000 
-    kafka: 
-        image: confluentinc/cp-kafka:latest 
-        depends_on: 
-            - zookeeper 
-        ports: 
-            - 9092:9092 
-        environment: 
-            KAFKA_BROKER_ID: 1 
-            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181 
-            KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://xortd.com:9092 # this needs the Ip or domain to access externally 
-            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT 
-            KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT 
-            KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+# DISCLAIMER: DO NOT USE IN PRODUCTION, SECURITY CONFIGURATIONS ARE NOT GUARANTEED TO BE PROD READY
+version: '2'
+services:
+    zookeeper:
+        image: confluentinc/cp-zookeeper:latest
+        ports:
+            - 2181:2181
+        environment:
+            ZOOKEEPER_CLIENT_PORT: 2181
+            ZOOKEEPER_TICK_TIME: 2000
+            KAFKA_OPTS: "-Djava.security.auth.login.config=/tmp/zookeeper_jaas.conf"
+        volumes:
+            - ./zookeeper_jaas.conf:/tmp/zookeeper_jaas.conf
+
+    kafka:
+        image: confluentinc/cp-kafka:latest
+        depends_on:
+            - zookeeper
+        ports:
+            - 9092:9092
+        environment:
+            KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+            KAFKA_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://:9092
+            KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://<HOST_EXTERNAL_IP>:9092 # this needs the Ip or domain to access externally 
+            KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:SASL_PLAINTEXT
+            KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+            KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+            KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+            KAFKA_OPTS: "-Djava.security.auth.login.config=/tmp/kafka_server_jaas.conf"
+        volumes:
+            - ./kafka_server_jaas.conf:/tmp/kafka_server_jaas.conf
