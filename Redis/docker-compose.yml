@@ -1,0 +1,25 @@
+version: '3'
+services:
+  redis:
+    image: redis
+    environment:
+      - REDIS_PASSWORD=PLACEHOLDER_1
+    command: redis-server --appendonly yes --requirepass $REDIS_PASSWORD
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    ports:
+      - '30000:6379'
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+      - REDIS_PASSWORD=PLACEHOLDER_1
+      - HTTP_USER=redis
+      - HTTP_PASSWORD=PLACEHOLDER_2
+    depends_on:
+      - redis
+
+volumes:
+  redis-data:
